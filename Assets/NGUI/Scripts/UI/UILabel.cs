@@ -1866,8 +1866,14 @@ public class UILabel : UIWidget
 
 		if (onPostFill != null)
 			onPostFill(this, offset, verts, uvs, cols);
+		if(onPostFillCallBack!=null)
+        {
+			onPostFillCallBack();
+		}
 	}
 
+
+	protected System.Action onPostFillCallBack;
 	/// <summary>
 	/// Align the vertices, making the label positioned correctly based on the pivot.
 	/// Returns the offset that was applied.

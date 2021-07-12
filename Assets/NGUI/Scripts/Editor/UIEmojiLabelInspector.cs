@@ -10,19 +10,26 @@ using UnityEditor;
 /// </summary>
 
 [CanEditMultipleObjects]
+#if UNITY_3_5
+[CustomEditor(typeof(UILabel))]
+#else
 [CustomEditor(typeof(UILabel), true)]
-public class EmojiLabelInspector : UILabelInspector
+#endif
+public class UIEmojiLabelInspector : UILabelInspector
 {
+
 
     /// <summary>
     /// Draw the label's properties.
     /// </summary>
+
     protected override bool ShouldDrawProperties()
     {
         bool isValid = base.ShouldDrawProperties();
 
         EditorGUI.BeginDisabledGroup(!isValid);
-        NGUIEditorTools.DrawProperty("Atlas", serializedObject, "emojiAtlas");//表情所在的图集Atlas
+        NGUIEditorTools.DrawProperty("emojiAtlas", serializedObject, "emojiAtlas");//表情所在的图集Atlas
+        NGUIEditorTools.DrawProperty("emojiPrefab", serializedObject, "emojiPrefab");//表情所在的图集Atlas
         EditorGUI.EndDisabledGroup();
         return isValid;
     }

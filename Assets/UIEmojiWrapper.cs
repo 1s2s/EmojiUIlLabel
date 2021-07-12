@@ -7,6 +7,42 @@ public class UIEmojiWrapper
 {
     private GameObject emojiPrefab;
     private UIAtlas emojiAltas;
+    private UIRoot _root;
+    public UIRoot Root
+    {
+        get
+        {
+            if (null == _root)
+            {
+                _root = GameObject.FindObjectOfType<UIRoot>();
+            }
+            return _root;
+        }
+    }
+
+    private Transform _freeSprPoolTrans;
+    public Transform FreeSprPool
+    {
+        get
+        {
+            if(null == _freeSprPoolTrans)
+            {
+                GameObject go = GameObject.Find("UIRoot/FreeEmojiPool");
+                if (go == null)
+                {
+                    go = new GameObject();
+                }
+                go.name = "FreeEmojiPool";
+                go.transform.SetParent(Root.transform);
+                go.transform.localPosition = Vector3.one;
+                go.transform.localScale = Vector3.one;
+                _freeSprPoolTrans = go.transform;
+            }
+            return _freeSprPoolTrans;
+        }
+    }
+
+
     private bool isInit = false;
     //表情的转义对应着表情的名称
     private Dictionary<string,string> emojiName = new Dictionary<string, string>();
@@ -29,7 +65,7 @@ public class UIEmojiWrapper
         }
     }
 
-    public void Init(UIAtlas atlas)
+    public void Init(UIAtlas atlas,GameObject emojiprefab)
     {
         if(!isInit)
         {
@@ -43,16 +79,10 @@ public class UIEmojiWrapper
             {
                 emojiName.Add(emojiAltas.spriteList[i].name, emojiAltas.spriteList[i].name);
             }
-            emojiPrefab = new GameObject();
-            UISprite spr = emojiPrefab.AddComponent<UISprite>();
-            if(null!=spr)
+            if(null == emojiPrefab)
             {
-                spr.transform.localPosition = OutOffScreen;
-                spr.name = "emoji";
-                spr.atlas = emojiAltas;
-                spr.onPostFill += OnPostFill;
+                this.emojiPrefab = emojiprefab;
             }
-            freeSpr.Enqueue(emojiPrefab);
             isInit = true;
         }
     }
@@ -61,17 +91,22 @@ public class UIEmojiWrapper
         return emojiName!=null&&emojiName.ContainsKey(key);
     }
 
-    /// <summary>
+    /// <summary> 
     /// 未用的表情不销毁
     /// </summary>
     /// <param name="emoji"></param>
     public void PushEmoji(GameObject emoji)
     {
-        if(null == emoji) return; 
-        emoji.transform.localPosition = OutOffScreen;
-        emoji.transform.parent = null;
-        emoji.gameObject.SetActive(false);
-        freeSpr.Enqueue(emoji);
+        if(null == emoji) return;
+        if(useSpr.Contains(emoji))
+        {
+            useSpr.Remove(emoji);
+            emoji.transform.parent = null;
+            emoji.transform.localPosition = OutOffScreen;
+            emoji.gameObject.SetActive(false);
+            emoji.transform.parent = FreeSprPool;
+            freeSpr.Enqueue(emoji);
+        }
     } 
 
     public void PushEmoji(List<GameObject> emojiList)
@@ -92,14 +127,13 @@ public class UIEmojiWrapper
             UISprite emojiSpr = emoji.GetComponent<UISprite>();
             if(emojiSpr!=null)
             {
-                emojiSpr.hideIfOffScreen = true;
+                emojiSpr.transform.localPosition = OutOffScreen;
+                emojiSpr.name = "emoji";
                 emojiSpr.atlas = emojiAltas;
-                emojiSpr.onPostFill += OnPostFill;
             }
             freeSpr.Enqueue(emoji);
         }
         GameObject go = freeSpr.Dequeue();
-        
         if (go != null)
         {
             useSpr.Add(go);
@@ -117,19 +151,5 @@ public class UIEmojiWrapper
         }
         return retSpr;
     }
-
-    public void OnPostFill (UIWidget widget, int bufferOffset, BetterList<Vector3> verts, BetterList<Vector2> uvs, BetterList<Color> cols)
-     {
-         if (widget != null)
-         {
-             if(!widget.isVisible)
-             {
-                 UISprite spt = widget as UISprite;
-                 if (spt != null)
-                 {
-                     PushEmoji(spt.gameObject);
-                 }
-             }
-         }
-     }
+   
 }
